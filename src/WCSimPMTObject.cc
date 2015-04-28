@@ -29,8 +29,10 @@ WCSimPMTObject::WCSimPMTObject()
     // By default, each PMT has 100% collection efficiency at all angles
     // This can be overridden by setting collectionEfficiency to a new vector
     // in the derived class constructor.
-    collectionEfficiencyAngle = { 0., 10., 20., 30., 40., 50., 60., 70., 80., 90.};
-    collectionEfficiency      = { 100., 100., 100., 100., 100., 100., 100., 100., 100., 100.};
+    for (int i = 0; i < 10; ++i){
+        collectionEfficiencyAngle[i] = i*10.0;
+        collectionEfficiency[i] = 100.0;
+    }
 }
 
 
@@ -861,7 +863,9 @@ G4float  PMT12inchHQE::GetmaxQE()//currently uses the same as the 10inchHQE
 
 HPD20inchHQE::HPD20inchHQE()
 {
-    collectionEfficiency = { 98., 98., 98., 98., 98., 98., 98., 98., 98., 98.};  
+    for(int i = 0; i < 10; ++i){
+        collectionEfficiency[i] = 98.0;
+    }
 }
 
 HPD20inchHQE::~HPD20inchHQE(){}
@@ -1022,7 +1026,9 @@ G4float HPD20inchHQE::GetmaxQE(){
 
 HPD12inchHQE::HPD12inchHQE()
 {
-    collectionEfficiency = { 98., 98., 98., 98., 98., 98., 98., 98., 98., 98.};    
+    for(int i = 0; i < 10; ++i){
+        collectionEfficiency[i] = 98.0;
+    }
 }
 
 HPD12inchHQE::~HPD12inchHQE(){}
@@ -1191,7 +1197,9 @@ G4float HPD12inchHQE::GetmaxQE(){
  
 BoxandLine20inchHQE::BoxandLine20inchHQE()
 {
-    collectionEfficiency = { 95., 95., 95., 95., 95., 95., 95., 95., 95., 95.};   
+    for(int i = 0; i < 10; ++i){
+        collectionEfficiency[i] = 98.0;
+    }
 }
 
 BoxandLine20inchHQE::~BoxandLine20inchHQE(){}
@@ -1354,7 +1362,9 @@ G4float BoxandLine20inchHQE::GetmaxQE(){
 
 BoxandLine12inchHQE::BoxandLine12inchHQE()
 {
-    collectionEfficiency = { 95., 95., 95., 95., 95., 95., 95., 95., 95., 95.};   
+    for(int i = 0; i < 10; ++i){
+        collectionEfficiency[i] = 98.0;
+    }
 }
 
 BoxandLine12inchHQE::~BoxandLine12inchHQE(){}

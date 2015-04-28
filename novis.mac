@@ -28,10 +28,10 @@
 
 #Changes the length of the simulated volume. Is currently only set up for HyperK. 
 
-#/WCSim/WCgeom HyperK #default length is 49500 mm unless changed in /WCSim/HK/PartionLength below.
+/WCSim/WCgeom HyperK #default length is 49500 mm unless changed in /WCSim/HK/PartionLength below.
 #/WCSim/WCgeom HyperK_withHPD #default length is 49500 mm unless changed in /WCSim/HK/PartionLength below.
 
-#/WCSim/HyperK/waterTank_Length 24750. mm # Equivalent length for 10 partitions
+/WCSim/HyperK/waterTank_Length 24750. mm # Equivalent length for 10 partitions
 #/WCSim/HyperK/waterTank_Length 49500. mm # Equivalent length for 5 partitions
 #/WCSim/HyperK/waterTank_Length 61875. mm # Equivalent length for 4 partitions
 #/WCSim/HyperK/waterTank_Length 82500. mm # Equivalent length for 3 partitions
@@ -48,18 +48,18 @@
 #/WCSim/WCgeom DUSEL_200kton_12inch_HQE_10perCent
 #/WCSim/WCgeom DUSEL_200kton_12inch_HQE_14perCent
 
-/WCSim/WCgeom nuPRISM
+#/WCSim/WCgeom nuPRISM
 
 #Select which PMT to use
-/WCSim/nuPRISM/SetPMTType PMT8inch
-/WCSim/nuPRISM/SetPMTPercentCoverage 20
+#/WCSim/nuPRISM/SetPMTType PMT8inch
+#/WCSim/nuPRISM/SetPMTPercentCoverage 20
 #Set height of nuPRISM inner detector
-/WCSim/nuPRISM/SetDetectorHeight 10. m
+#/WCSim/nuPRISM/SetDetectorHeight 10. m
 #Set vertical position of inner detector, in beam coordinates
-/WCSim/nuPRISM/SetDetectorVerticalPosition -10. m
+#/WCSim/nuPRISM/SetDetectorVerticalPosition -10. m
 #Set diameter of inner detector
-/WCSim/nuPRISM/SetDetectorDiameter 6. m
-/WCSim/nuPRISM/Update
+#/WCSim/nuPRISM/SetDetectorDiameter 6. m
+#/WCSim/nuPRISM/Update
 /WCSim/Construct
 
 
@@ -84,8 +84,8 @@
 ## you can of course use your own
 # Or you can use the G4 Particle Gun below
 # Or a NEUT vector file
-/mygen/generator rootracker
-/mygen/vecfile ../genev_320a_1km_nd3_9xx_30818.root
+/mygen/generator laser
+#/mygen/vecfile ../genev_320a_1km_nd3_9xx_30818.root
 #/mygen/vecfile h2o.2km.001-009x3_G4.kin
 #/mygen/vecfile mu+.out
 
@@ -103,11 +103,28 @@
 #/DarkRate/SetConvert 1.120 #For HPDs
 #/DarkRate/SetConvert 1.126 #For Box and Line PMTs
 
-#/gun/particle mu- 
-#/gun/particle pi0
-#/gun/energy 500 MeV
-#/gun/direction 0 0 1 
-#/gun/position 0 0 0  
+#/gun/particle mu- #muons decay at ~2 MeV/cm
+##/gun/particle pi-
+#/gun/energy 1000 MeV
+#/gun/direction 0 1 0 
+#/gun/position 0 -1000 0  
+
+/gps/particle mu-
+/gps/ene/type Lin
+/gps/ene/intercept 0.1111
+/gps/ene/min 1 GeV
+/gps/ene/max 10 GeV
+/gps/pos/type Volume
+/gps/pos/shape Cylinder
+/gps/pos/centre 0 -1000 0
+/gps/pos/rot1 0 0 1
+/gps/pos/rot2 1 0 0
+/gps/pos/halfz 5. m
+/gps/pos/radius 3. m
+/gps/ang/type iso
+
+#/gps/pos/confine WCBarrel
+
 
 ## change the name of the output root file, default = wcsim.root
 /WCSimIO/RootFile wcsim_output.root

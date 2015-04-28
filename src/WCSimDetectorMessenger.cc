@@ -183,14 +183,6 @@ void WCSimDetectorMessenger::SetNewValue(G4UIcommand* command,G4String newValue)
 		  WCSimDetector->SetSuperKGeometry();
 		} else if (newValue == "SuperK_20inchPMT_20perCent" ){
 		  WCSimDetector->SuperK_20inchPMT_20perCent();
-		} else if (newValue == "SuperK_20inchHPD_20perCent" ){
-		  WCSimDetector->SuperK_20inchHPD_20perCent();
-		} else if ( newValue == "SuperK_12inchHPD_15perCent" ) {
-		  WCSimDetector->SuperK_12inchHPD_15perCent();
-		} else if ( newValue == "SuperK_20inchHPD_14perCent" ) {
-		  WCSimDetector->SuperK_20inchHPD_14perCent();
-		} else if (newValue == "Cylinder_12inchHPD_15perCent" ){
-		  WCSimDetector->Cylinder_12inchHPD_15perCent();
                 } else if ( newValue == "HyperK") {
                         WCSimDetector->SetIsHyperK(true);
 			WCSimDetector->SetHyperKGeometry();
