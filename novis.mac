@@ -19,7 +19,9 @@
 
 # Generic cylindrical detector with a height of 100m and a 
 # diameter of 69m with 12" HPD and 14.59% photocoverage
-#/WCSim/WCgeom Cylinder_12inchHPD_15perCent # Note: the actual coverage is 14.59%
+/WCSim/WCgeom Cylinder_12inchHPD_15perCent # Note: the actual coverage is 14.59%
+#Dimension radii are x,y,z 3455.75  3454.98  5003.94 cm
+
 
 # Currently by defualt the DUSEL configurations are 10 inch.
 # you can overide this with the WCPMTsize command.
@@ -28,10 +30,10 @@
 
 #Changes the length of the simulated volume. Is currently only set up for HyperK. 
 
-/WCSim/WCgeom HyperK #default length is 49500 mm unless changed in /WCSim/HK/PartionLength below.
+#/WCSim/WCgeom HyperK #default length is 49500 mm unless changed in /WCSim/HK/PartionLength below.
 #/WCSim/WCgeom HyperK_withHPD #default length is 49500 mm unless changed in /WCSim/HK/PartionLength below.
 
-/WCSim/HyperK/waterTank_Length 24750. mm # Equivalent length for 10 partitions
+#/WCSim/HyperK/waterTank_Length 24750. mm # Equivalent length for 10 partitions
 #/WCSim/HyperK/waterTank_Length 49500. mm # Equivalent length for 5 partitions
 #/WCSim/HyperK/waterTank_Length 61875. mm # Equivalent length for 4 partitions
 #/WCSim/HyperK/waterTank_Length 82500. mm # Equivalent length for 3 partitions
@@ -109,29 +111,47 @@
 #/gun/direction 0 1 0 
 #/gun/position 0 -1000 0  
 
+#/gps/verbose 2
 /gps/particle mu-
+
 /gps/ene/type Lin
 /gps/ene/intercept 0.1111
 /gps/ene/min 1 GeV
 /gps/ene/max 10 GeV
+
 /gps/pos/type Volume
 /gps/pos/shape Cylinder
-/gps/pos/centre 0 -1000 0
-/gps/pos/rot1 0 0 1
-/gps/pos/rot2 1 0 0
-/gps/pos/halfz 5. m
-/gps/pos/radius 3. m
-/gps/ang/type iso
+/gps/pos/centre 0 0 0
+#For upright cylinder use rot1 = 0 0 1 and rot2 = 1 0 0
+#/gps/pos/rot1 0 0 1
+#/gps/pos/rot2 1 0 0
+/gps/pos/halfz 10. m
+/gps/pos/radius 32. m
+
+/gps/ang/type iso #isotropic
+#/gps/ang/type cos
+#/gps/ang/type focused
+#/gps/ang/type user
+#/gps/ang/mintheta 1.570796327
+#/gps/ang/maxtheta = 3.14159
+#/gps/ang/focuspoint  0 0 0. m
+#/gps/ang/sigma_r 90. deg
+#/gps/ang/sigma_x 2.5 rad
+#/gps/ang/sigma_y 2.5 rad
+#/gps/ang/minphi 5.6 rad
+
+#/gps/position 0 25.3 0 m 
+#/gps/direction 0 1 0 
 
 #/gps/pos/confine WCBarrel
 
 
 ## change the name of the output root file, default = wcsim.root
-/WCSimIO/RootFile wcsim_output.root
+/WCSimIO/RootFile wcsim_muCent5k_iso.root
 
 ## Boolean to select whether to save the NEUT RooTracker vertices in the output file, provided you used
 ## a NEUT vector file as input
 /WCSimIO/SaveRooTracker 1
 
-/run/beamOn 10
+/run/beamOn 5000
 #exit

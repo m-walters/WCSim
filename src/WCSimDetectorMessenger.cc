@@ -179,17 +179,18 @@ void WCSimDetectorMessenger::SetNewValue(G4UIcommand* command,G4String newValue)
 	if( command == PMTConfig ) { 
 		WCSimDetector->SetIsUpright(false);
                 WCSimDetector->SetIsHyperK(false);
-                if ( newValue == "SuperK") {
-		  WCSimDetector->SetSuperKGeometry();
-		} else if (newValue == "SuperK_20inchPMT_20perCent" ){
-		  WCSimDetector->SuperK_20inchPMT_20perCent();
-		} else if (newValue == "SuperK_20inchBandL_20perCent" ){
-		  WCSimDetector->SuperK_20inchBandL_20perCent();
-		} else if ( newValue == "SuperK_12inchBandL_15perCent" ) {
-		  WCSimDetector->SuperK_12inchBandL_15perCent();
-		} else if ( newValue == "SuperK_20inchBandL_14perCent" ) {
-		  WCSimDetector->SuperK_20inchBandL_14perCent();
-		} else if (newValue == "Cylinder_12inchHPD_15perCent" ){
+//                if ( newValue == "SuperK") {
+//		  WCSimDetector->SetSuperKGeometry();
+//		} else if (newValue == "SuperK_20inchPMT_20perCent" ){
+//		  WCSimDetector->SuperK_20inchPMT_20perCent();
+//		} else if (newValue == "SuperK_20inchBandL_20perCent" ){
+//		  WCSimDetector->SuperK_20inchBandL_20perCent();
+//		} else if ( newValue == "SuperK_12inchBandL_15perCent" ) {
+//		  WCSimDetector->SuperK_12inchBandL_15perCent();
+//		} else if ( newValue == "SuperK_20inchBandL_14perCent" ) {
+//		  WCSimDetector->SuperK_20inchBandL_14perCent();
+//		} else if (newValue == "Cylinder_12inchHPD_15perCent" ){
+		if (newValue == "Cylinder_12inchHPD_15perCent" ){
 		  WCSimDetector->Cylinder_12inchHPD_15perCent();
                 } else if ( newValue == "HyperK") {
                         WCSimDetector->SetIsHyperK(true);

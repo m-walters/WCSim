@@ -258,12 +258,6 @@ void check_michels(char *filename=NULL) {
 
     }
 
-    if(*momentum*){
-
-blahblah
-
-    }
-
 
 
 

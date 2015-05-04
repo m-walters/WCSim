@@ -4,7 +4,7 @@
 #include <cmath>
 
 
-void check_michels2(char *filename=NULL) {
+void check_michelsContained(char *filename=NULL) {
   /* Adapted version of check_michels by Michael Walters
    * for dynamic range testing
    *
@@ -29,12 +29,16 @@ void check_michels2(char *filename=NULL) {
   gStyle->SetOptStat(1);
 
 
-
-  TFile *f;
+  TFile *f, *fhistos;
+  char fhistname[100];
+  strcpy(fhistname,"plots_");
+  strcat(fhistname,filename);
+  std::cout << filename << " " << fhistname << std::endl;
   if (filename==NULL){
     f = new TFile("../wcsim.root");
   }else{
-    f = new TFile(filename,"UPDATE");
+    f = new TFile(filename,"UPDATE"); 
+    fhistos = new TFile(fhistname,"RECREATE");
   }
   if (!f->IsOpen()){
     cout << "Error, could not open input file: " << filename << endl;
@@ -55,6 +59,13 @@ void check_michels2(char *filename=NULL) {
   TH2D *QvsT = new TH2D("QvsT","charge vs. time", 40, 900, 1400, 800, -0.5, 300.5);
   QvsT->SetXTitle("time");
   QvsT->SetYTitle("charge");
+
+  // TH1D *oldmchrg = ((TH1D*)(gROOT->FindObject("maxcharge")));
+  // if(oldmchrg) {
+  //   std::cout << "deleting oldmchrg\n";
+  //   delete oldmchrg;
+  // }
+
 
   TH1D *charge = new TH1D("charge","charge per PMT", 400, -0.5, 999.5);
   TH1D *maxcharge = new TH1D("maxcharge","Maximum charge per event", 50, -0.5, 999.5);
@@ -83,7 +94,8 @@ void check_michels2(char *filename=NULL) {
 
   //TH1F *michel_frac = new TH1F("michel_frac","Fraction of Decay-e PEs that were detected",120,-0.1,1.1);
 
-  
+
+
   TH2D *highPE_XYloc = new TH2D("highPE_XYloc","High PE Particle Origins",20,-40,40,20,-40,40);
   highPE_XYloc->SetXTitle("Location x(m)");
   highPE_XYloc->SetYTitle("Location y(m)");
@@ -145,12 +157,12 @@ void check_michels2(char *filename=NULL) {
       WCSimRootTrack *track = (WCSimRootTrack*)wcsimrootevent->GetTracks()->At(i);
 
       if(i == 2 && // source particle
-	 ( fabs(track->GetStart(2))/100 > 50.0 
-	   || fabs(track->GetStart(0))/100 > 32.0
-	   || fabs(track->GetStart(1))/100 > 32.0
-	   || fabs(track->GetStop(2))/100 > 50.0 
-	   || fabs(track->GetStop(0))/100 > 32.0
-	   || fabs(track->GetStop(1))/100 > 32.0)) 
+	 ( fabs(track->GetStart(2))/100 > 49.5 
+	   || fabs(track->GetStart(0))/100 > 34.0
+	   || fabs(track->GetStart(1))/100 > 34.0
+	   || fabs(track->GetStop(2))/100 > 49.5 
+	   || fabs(track->GetStop(0))/100 > 34.0
+	   || fabs(track->GetStop(1))/100 > 34.0)) 
 	{
 	
 	OB = true;
@@ -175,8 +187,11 @@ void check_michels2(char *filename=NULL) {
       }	
     }
 
-    if(OB == true) continue;
-    
+    if(OB == true) {
+      nOB++;
+      continue;
+    }    
+
     if(hasElectron){
       total_with_ingate_michel++;
     }else{
@@ -292,35 +307,17 @@ void check_michels2(char *filename=NULL) {
     if(clargest > 200) {
       
       if (0) std::cout << "\nTop Track"
-		<< "\nipnu " << track->GetIpnu()
-		<< "\nID " << track->GetId()
-		<< "\np " << track->GetP()
-		<< "\nE " << track->GetE()
-		<< "\nstart " << track->GetStart(0)
-		<< "\nstop " << track->GetStop(0)
-		<< "\nparent " << track->GetParenttype() << std::endl;
-
-      // // Restrict to container volume
-      // std::cout << ii << "\t" << track->GetStart(0)/100 << " " << track->GetStop(0)/100
-      // 		<< "\t" << track->GetStart(1)/100 << " " << track->GetStop(1)/100
-      // 		<< "\t" << track->GetStart(2)/100 << " " << track->GetStop(2)/100;
-
-      if(fabs(track->GetStart(2))/100 < 50.0 
-	 && fabs(track->GetStart(0))/100 < 34.0
-	 && fabs(track->GetStart(1))/100 < 34.0
-	 && fabs(track->GetStop(2))/100 < 50.0 
-	 && fabs(track->GetStop(0))/100 < 34.0
-	 && fabs(track->GetStop(1))/100 < 34.0) {
+		       << "\nipnu " << track->GetIpnu()
+		       << "\nID " << track->GetId()
+		       << "\np " << track->GetP()
+		       << "\nE " << track->GetE()
+		       << "\nstart " << track->GetStart(0)
+		       << "\nstop " << track->GetStop(0)
+		       << "\nparent " << track->GetParenttype() << std::endl;
 	
-	highPE_XYloc->Fill(track->GetStart(0)/100,track->GetStart(1)/100);
-	highPE_mom->Fill(track->GetP()/1000);
+      highPE_XYloc->Fill(track->GetStart(0)/100,track->GetStart(1)/100);
+      highPE_mom->Fill(track->GetP()/1000);
 
-      }else{
-       
-	std::cout << ii << " Out of bounds" << std::endl;
-	nOB++;
-
-      }
 
     }
 
@@ -464,8 +461,8 @@ void check_michels2(char *filename=NULL) {
 
       }
     }
+
     maxcharge->Fill(largest);
-    
 
     
     michel_n->Fill(nMichelPhotons);
@@ -659,5 +656,10 @@ void check_michels2(char *filename=NULL) {
   //cmaxcharge->SetLineColor(2);;
 
   charge->Write();
-   maxcharge->Write();
+  maxcharge->Write();
+
+
+  fhistos->Write();
+
+
 }
