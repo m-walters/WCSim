@@ -112,7 +112,7 @@
 #/gun/position 0 -1000 0  
 
 #/gps/verbose 2
-/gps/particle mu-
+/gps/particle e-
 
 /gps/ene/type Lin
 /gps/ene/intercept 0.1111
@@ -121,7 +121,7 @@
 
 /gps/pos/type Volume
 /gps/pos/shape Cylinder
-/gps/pos/centre 0 0 0
+/gps/pos/centre 0 0 -40. m
 #For upright cylinder use rot1 = 0 0 1 and rot2 = 1 0 0
 #/gps/pos/rot1 0 0 1
 #/gps/pos/rot2 1 0 0
@@ -147,7 +147,7 @@
 
 
 ## change the name of the output root file, default = wcsim.root
-/WCSimIO/RootFile wcsim_muCent5k_iso.root
+/WCSimIO/RootFile /data14b/mwalters/wcsim_eEnd5k_iso.root
 
 ## Boolean to select whether to save the NEUT RooTracker vertices in the output file, provided you used
 ## a NEUT vector file as input

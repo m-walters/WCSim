@@ -4,7 +4,7 @@
 #include <cmath>
 
 
-void check_michels2(char *filename=NULL) {
+void check_michelsContained(char *filename=NULL) {
   /* Adapted version of check_michels by Michael Walters
    * for dynamic range testing
    *
@@ -24,17 +24,23 @@ void check_michels2(char *filename=NULL) {
   if(wcsimdirenv !=  NULL){
     gSystem->Load("${WCSIMDIR}/libWCSimRoot.so");
   }else{
-    gSystem->Load("../libWCSimRoot.so");
+    gSystem->Load("${HOME}/work/wcsim/WCSim/libWCSimRoot.so");
   }
   gStyle->SetOptStat(1);
 
 
+  TFile *f, *fhistos;
+  char fhistname[100];
+  strcpy(fhistname,"plots_");
+  strcat(fhistname,filename);
 
-  TFile *f;
+  std::cout << "Generating root file containing plots: " << fhistname << std::endl;
+
   if (filename==NULL){
-    f = new TFile("../wcsim.root");
+    f = new TFile("../wcsim_test.root");
   }else{
-    f = new TFile(filename,"UPDATE");
+    f = new TFile(filename,"UPDATE"); 
+    fhistos = new TFile(fhistname,"RECREATE");
   }
   if (!f->IsOpen()){
     cout << "Error, could not open input file: " << filename << endl;
@@ -55,6 +61,7 @@ void check_michels2(char *filename=NULL) {
   TH2D *QvsT = new TH2D("QvsT","charge vs. time", 40, 900, 1400, 800, -0.5, 300.5);
   QvsT->SetXTitle("time");
   QvsT->SetYTitle("charge");
+
 
   TH1D *charge = new TH1D("charge","charge per PMT", 400, -0.5, 999.5);
   TH1D *maxcharge = new TH1D("maxcharge","Maximum charge per event", 50, -0.5, 999.5);
@@ -83,16 +90,20 @@ void check_michels2(char *filename=NULL) {
 
   //TH1F *michel_frac = new TH1F("michel_frac","Fraction of Decay-e PEs that were detected",120,-0.1,1.1);
 
-  
-  TH2D *highPE_XYloc = new TH2D("highPE_XYloc","High PE Particle Origins",20,-40,40,20,-40,40);
-  highPE_XYloc->SetXTitle("Location x(m)");
-  highPE_XYloc->SetYTitle("Location y(m)");
+
+
+  TH2D *highPE_XYstart = new TH2D("highPE_XYstart","High PE Particle Start",20,-40,40,20,-40,40);
+  highPE_XYstart->SetXTitle("Location x(m)");
+  highPE_XYstart->SetYTitle("Location y(m)");
+
+
+  TH2D *highPE_XYstop = new TH2D("highPE_XYstop","High PE Particle Stop",20,-40,40,20,-40,40);
+  highPE_XYstop->SetXTitle("Location x(m)");
+  highPE_XYstop->SetYTitle("Location y(m)");
+
 
   TH1D *highPE_mom = new TH1D("highPE_mom","High PE Particle Initial Momentum",110,-0.1,10.9);
   highPE_mom->SetXTitle("Initial Momentum (GeV)");
-
-  TH1D *initEnrg = new TH1D("initEnrg","Initial Source Particle Energy",110,-0.1,10.9);
-  initEnrg->SetXTitle("Initial Energy (GeV)");
 
 
 
@@ -109,7 +120,7 @@ void check_michels2(char *filename=NULL) {
   int nevent = wcsimT->GetEntries();
   int total_with_ingate_michel = 0;
   int total_with_subevent_michel = 0;
-  //nevent = 100;
+  //nevent = 3639;
 
   int nOB = 0; //number out of bounds
 
@@ -117,6 +128,13 @@ void check_michels2(char *filename=NULL) {
 
     if(ii%50==0) 
       std::cout << "Event " << ii << std::endl;
+
+    if(ii%50 == 0 && ii != 0)
+      std::cout << "Percent OB: " << 100*(double)nOB/(double)ii << "%" << std::endl;
+
+    if(ii == (nevent-1))
+      std::cout << "Number of events excluded from 'High PE' plots analysis (out of bounds): " << nOB << std::endl;
+
   
     wcsimT->GetEvent(ii); 
     
@@ -145,16 +163,16 @@ void check_michels2(char *filename=NULL) {
       WCSimRootTrack *track = (WCSimRootTrack*)wcsimrootevent->GetTracks()->At(i);
 
       if(i == 2 && // source particle
-	 ( fabs(track->GetStart(2))/100 > 50.0 
-	   || fabs(track->GetStart(0))/100 > 32.0
-	   || fabs(track->GetStart(1))/100 > 32.0
-	   || fabs(track->GetStop(2))/100 > 50.0 
-	   || fabs(track->GetStop(0))/100 > 32.0
-	   || fabs(track->GetStop(1))/100 > 32.0)) 
+	 ( fabs(track->GetStart(2))/100 > 49.5 
+	   || fabs(track->GetStart(0))/100 > 34.0
+	   || fabs(track->GetStart(1))/100 > 34.0
+	   || fabs(track->GetStop(2))/100 > 49.5 
+	   || fabs(track->GetStop(0))/100 > 34.0
+	   || fabs(track->GetStop(1))/100 > 34.0)) 
 	{
 	
 	OB = true;
-	std::cout << ii << " OB event ommitted from analysis" << std::endl;
+	std::cout << ii << ": OB event ommitted from analysis" << std::endl;
 
 	}
 
@@ -175,8 +193,11 @@ void check_michels2(char *filename=NULL) {
       }	
     }
 
-    if(OB == true) continue;
-    
+    if(OB == true) {
+      nOB++;
+      continue;
+    }    
+
     if(hasElectron){
       total_with_ingate_michel++;
     }else{
@@ -287,50 +308,24 @@ void check_michels2(char *filename=NULL) {
     // Point the track to the source particle. Normally would be At(0) but
     // there's this odd muon that is produced everytime in that slot, so we want At(2)
     track = (WCSimRootTrack*)wcsimrootevent->GetTracks()->At(2); 
-    initEnrg->Fill(track->GetE()/1000);
 
     if(clargest > 200) {
       
       if (0) std::cout << "\nTop Track"
-		<< "\nipnu " << track->GetIpnu()
-		<< "\nID " << track->GetId()
-		<< "\np " << track->GetP()
-		<< "\nE " << track->GetE()
-		<< "\nstart " << track->GetStart(0)
-		<< "\nstop " << track->GetStop(0)
-		<< "\nparent " << track->GetParenttype() << std::endl;
-
-      // // Restrict to container volume
-      // std::cout << ii << "\t" << track->GetStart(0)/100 << " " << track->GetStop(0)/100
-      // 		<< "\t" << track->GetStart(1)/100 << " " << track->GetStop(1)/100
-      // 		<< "\t" << track->GetStart(2)/100 << " " << track->GetStop(2)/100;
-
-      if(fabs(track->GetStart(2))/100 < 50.0 
-	 && fabs(track->GetStart(0))/100 < 34.0
-	 && fabs(track->GetStart(1))/100 < 34.0
-	 && fabs(track->GetStop(2))/100 < 50.0 
-	 && fabs(track->GetStop(0))/100 < 34.0
-	 && fabs(track->GetStop(1))/100 < 34.0) {
+		       << "\nipnu " << track->GetIpnu()
+		       << "\nID " << track->GetId()
+		       << "\np " << track->GetP()
+		       << "\nE " << track->GetE()
+		       << "\nstart " << track->GetStart(0)
+		       << "\nstop " << track->GetStop(0)
+		       << "\nparent " << track->GetParenttype() << std::endl;
 	
-	highPE_XYloc->Fill(track->GetStart(0)/100,track->GetStart(1)/100);
-	highPE_mom->Fill(track->GetP()/1000);
+      highPE_XYstart->Fill(track->GetStart(0)/100,track->GetStart(1)/100);
+      highPE_XYstop->Fill(track->GetStop(0)/100,track->GetStop(1)/100);
+      highPE_mom->Fill(track->GetP()/1000);
 
-      }else{
-       
-	std::cout << ii << " Out of bounds" << std::endl;
-	nOB++;
-
-      }
 
     }
-
-
-    if(ii%50 == 0 && ii != 0)
-      std::cout << "Percent OB: " << 100*(double)nOB/(double)ii << "%" << std::endl;
-
-    if(ii == (nevent-1))
-      std::cout << "Number of events excluded from 'High PE' plots analysis (out of bounds): " << nOB << std::endl;
-
 
 
 
@@ -464,8 +459,8 @@ void check_michels2(char *filename=NULL) {
 
       }
     }
+
     maxcharge->Fill(largest);
-    
 
     
     michel_n->Fill(nMichelPhotons);
@@ -531,14 +526,17 @@ void check_michels2(char *filename=NULL) {
 
 
 
-  TCanvas *cLoc = new TCanvas("cloc","cLoc",1000,1000);
-  highPE_XYloc->Draw("colz");
+  TCanvas *cLoc = new TCanvas("cloc","cLoc",1600,800);
+  cLoc->Divide(2,1);
+  cLoc->cd(1);
+  highPE_XYstart->Draw("colz");
+
+  cLoc->cd(2);
+  highPE_XYstop->Draw("colz");
 
   TCanvas *cMom = new TCanvas("cMom","cMom",1100,720);
   highPE_mom->Draw();
 
-  TCanvas *iEnrg = new TCanvas("iEnrg","iEnrg",1100,720);
-  initEnrg->Draw();
 
 //   TCanvas *c2 = new TCanvas("c2","c2");
 
@@ -659,5 +657,10 @@ void check_michels2(char *filename=NULL) {
   //cmaxcharge->SetLineColor(2);;
 
   charge->Write();
-   maxcharge->Write();
+  maxcharge->Write();
+
+
+  fhistos->Write();
+
+
 }
