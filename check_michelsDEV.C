@@ -4,7 +4,7 @@
 #include <cmath>
 
 
-void check_michelsContained(char *filename=NULL) {
+void check_michelsDEV(char *filename=NULL) {
   /* Adapted version of check_michels by Michael Walters
    * for dynamic range testing
    *
