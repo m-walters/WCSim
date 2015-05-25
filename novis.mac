@@ -7,7 +7,7 @@
 ## select the geometry
 # Default config if you do nothing is currently SuperK
 #
-# The tube size is fixed for SK to 20"
+# The tube size is fixed for SK to 20 inches
 # These are fixed geometries for validation
 #/WCSim/WCgeom SuperK
 
@@ -18,7 +18,7 @@
 #/WCSim/WCgeom SuperK_20inchBandL_14perCent # Note: the actual coverage is 13.51%
 
 # Generic cylindrical detector with a height of 100m and a 
-# diameter of 69m with 12" HPD and 14.59% photocoverage
+# diameter of 69m with 12 inch HPD and 14.59% photocoverage
 /WCSim/WCgeom Cylinder_12inchHPD_15perCent # Note: the actual coverage is 14.59%
 #Dimension radii are x,y,z 3455.75  3454.98  5003.94 cm
 
@@ -94,8 +94,8 @@
 # command to set dark noise frequency 13/06/09
 # default dark noise frequency is 0 kHz
 /DarkRate/SetDarkRate 4.2 kHz #This is the value for SKI set in SKDETSIM.
-#/DarkRate/SetDarkRate 8.4 kHz #For 20 inch HPDs and Box and Line PMTs, based on High QE 20" R3600 dark rate from EGADS nov 2014
-#/DarkRate/SetDarkRate 3.0 kHz #For 12 inch HPDs and Box and Line PMTs, based on High QE 20" R3600 dark rate from EGADS nov 2014
+#/DarkRate/SetDarkRate 8.4 kHz #For 20 inch HPDs and Box and Line PMTs, based on High QE 20inch R3600 dark rate from EGADS nov 2014
+#/DarkRate/SetDarkRate 3.0 kHz #For 12 inch HPDs and Box and Line PMTs, based on High QE 20inch R3600 dark rate from EGADS nov 2014
 
 # command to multiply the dark rate.
 # Convert dark noise frequency before digitization to after digitization by setting suitable factor
@@ -121,12 +121,12 @@
 
 /gps/pos/type Volume
 /gps/pos/shape Cylinder
-/gps/pos/centre 0 0 -40. m
+/gps/pos/centre 0 0 0
 #For upright cylinder use rot1 = 0 0 1 and rot2 = 1 0 0
 #/gps/pos/rot1 0 0 1
 #/gps/pos/rot2 1 0 0
-/gps/pos/halfz 10. m
-/gps/pos/radius 32. m
+/gps/pos/halfz 50. m
+/gps/pos/radius 34.5 m
 
 /gps/ang/type iso #isotropic
 #/gps/ang/type cos
@@ -147,11 +147,14 @@
 
 
 ## change the name of the output root file, default = wcsim.root
-/WCSimIO/RootFile /data14b/mwalters/wcsim_eEnd5k_iso.root
+/WCSimIO/RootFile /data14b/mwalters/wcsimtest3.root
 
 ## Boolean to select whether to save the NEUT RooTracker vertices in the output file, provided you used
 ## a NEUT vector file as input
 /WCSimIO/SaveRooTracker 1
 
-/run/beamOn 5000
+#Set seed
+/random/setSeeds 2345478 65546
+
+/run/beamOn 5
 #exit
