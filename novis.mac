@@ -147,7 +147,7 @@
 
 
 ## change the name of the output root file, default = wcsim.root
-/WCSimIO/RootFile /data14b/mwalters/wcsimtest3.root
+/WCSimIO/RootFile /data14b/mwalters/wcsimtest.root
 
 ## Boolean to select whether to save the NEUT RooTracker vertices in the output file, provided you used
 ## a NEUT vector file as input
@@ -156,5 +156,5 @@
 #Set seed
 /random/setSeeds 2345478 65546
 
-/run/beamOn 5
+/run/beamOn 1 
 #exit

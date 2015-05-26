@@ -4,7 +4,7 @@
 #include <cmath>
 
 
-void check_michels(char *filename=NULL) {
+void check_michelsMulti() {
   /* Adapted version of check_michels by Michael Walters
    * for dynamic range testing
    *
@@ -28,29 +28,35 @@ void check_michels(char *filename=NULL) {
   }
   gStyle->SetOptStat(1);
 
+  char filename[100],fhistname[100];
+  TChain chain("wcsimT");
 
-  TFile *f, *fhistos;
-  char fhistname[100];
-  strcpy(fhistname,"plots_");
-  strcat(fhistname,filename);
+  for(int i = 6; i < 8; i++) {
 
-  std::cout << "Generating root file containing plots: " << fhistname << std::endl;
+    TFile *f, *fhistos;
 
-  if (filename==NULL){
-    f = new TFile("../wcsim_test.root");
-  }else{
+    sprintf(filename,"wcsim_eIso%i.root",i);
+    sprintf(fhistname,"plots_%s",filename);
+
     f = new TFile(filename,"UPDATE"); 
     fhistos = new TFile(fhistname,"RECREATE");
-  }
-  if (!f->IsOpen()){
-    cout << "Error, could not open input file: " << filename << endl;
-    return -1;
+
+    if (!f->IsOpen()){
+      cout << "Error, could not open input file: " << filename << endl;
+      return -1;
+    }
+
+    chain.AddFile(filename);
+
   }
 
-  TTree  *wcsimT = f->Get("wcsimT");
+
+
+  //  TTree  *wcsimT = f->Get("wcsimT");
 
   WCSimRootEvent *wcsimrootsuperevent = new WCSimRootEvent();
-  wcsimT->SetBranchAddress("wcsimrootevent",&wcsimrootsuperevent);
+  //wcsimT->SetBranchAddress("wcsimrootevent",&wcsimrootsuperevent);
+  chain.SetBranchAddress("wcsimrootevent",&wcsimrootsuperevent);
 
   // Initializing
   TH1D *PE = new TH1D("PEmult","Photoelectron multiplicty", 16,-0.5,15.5);
@@ -63,10 +69,10 @@ void check_michels(char *filename=NULL) {
   QvsT->SetYTitle("charge");
 
 
-  TH1D *charge = new TH1D("charge","charge per PMT", 400, -0.5, 999.5);
-  TH1D *maxcharge = new TH1D("maxcharge","Maximum charge per event", 50, -0.5, 999.5);
-  TH1D *ccharge = new TH1D("ccharge","charge per PMT", 400, -0.5, 999.5);
-  TH1D *cmaxcharge = new TH1D("cmaxcharge","Maximum charge per event", 100, -0.5, 999.5);
+  TH1D *charge = new TH1D("charge","charge per PMT", 480, -0.5, 1199.5);
+  TH1D *maxcharge = new TH1D("maxcharge","Maximum charge per event", 60, -0.5, 1199.5);
+  TH1D *ccharge = new TH1D("ccharge","charge per PMT", 480, -0.5, 1199.5);
+  TH1D *cmaxcharge = new TH1D("cmaxcharge","Maximum charge per event", 120, -0.5, 1199.5);
 
   TH1D *cherenkov_hittime = new TH1D("cherenkov_hittime","cherenkov_hittime", 200, 50, 140);
   TH1D *cherenkov_hits_per_tube = new TH1D("cherenkov_hits_per_tube","cherenkov_hits_per_tube", 20, -0.5, 19.5);
@@ -109,7 +115,7 @@ void check_michels(char *filename=NULL) {
 
   // Force deletion to prevent memory leak when issuing multiple
   // calls to GetEvent()
-  wcsimT->GetBranch("wcsimrootevent")->SetAutoDelete(kTRUE);
+  chain.GetBranch("wcsimrootevent")->SetAutoDelete(kTRUE);
 
   typedef std::map<int, int>::iterator it_type;
 
@@ -117,7 +123,7 @@ void check_michels(char *filename=NULL) {
 
   double aspread = 0.0, aspreadn = 0.0;
 
-  int nevent = wcsimT->GetEntries();
+  int nevent = chain.GetEntries();
   int total_with_ingate_michel = 0;
   int total_with_subevent_michel = 0;
   //nevent = 3639;
@@ -136,7 +142,7 @@ void check_michels(char *filename=NULL) {
       std::cout << "Number of events excluded from 'High PE' plots analysis (out of bounds): " << nOB << std::endl;
 
   
-    wcsimT->GetEvent(ii); 
+    chain.GetEvent(ii); 
     
     // In the default vis.mac, only one event is run.  I suspect you could loop over more events, if they existed.
     WCSimRootTrigger *wcsimrootevent = wcsimrootsuperevent->GetTrigger(0);
