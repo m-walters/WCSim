@@ -28,12 +28,19 @@ void check_michelsMulti() {
   }
   gStyle->SetOptStat(1);
 
+
   char filename[100],fhistname[100];
   TChain chain("wcsimT");
 
-  for(int i = 6; i < 8; i++) {
+  int iFirst = 1;
+  int iLast = 1;
+  int nFiles = iLast-iFirst;
 
-    TFile *f, *fhistos;
+
+  TFile *f;
+  TFile *fhistos;
+
+  for(int i = iFirst; i < (iLast+1); i++) {
 
     sprintf(filename,"wcsim_eIso%i.root",i);
     sprintf(fhistname,"plots_%s",filename);
@@ -52,10 +59,8 @@ void check_michelsMulti() {
 
 
 
-  //  TTree  *wcsimT = f->Get("wcsimT");
 
   WCSimRootEvent *wcsimrootsuperevent = new WCSimRootEvent();
-  //wcsimT->SetBranchAddress("wcsimrootevent",&wcsimrootsuperevent);
   chain.SetBranchAddress("wcsimrootevent",&wcsimrootsuperevent);
 
   // Initializing
@@ -92,21 +97,14 @@ void check_michelsMulti() {
   TH1F *photons_n = new TH1F("photons_n","Number of Photons",200,1,10000);
 
   TH1F *michelDetected_n = new TH1F("michelDetected_n","Number of Michels Successfully Detected",50,1,800);
-  //TH1F *michelTubes_n = new TH1F("michelTubes_n","Number of PMTs with In-Gate Decay Electron PEs",50,1,800);
-
-  //TH1F *michel_frac = new TH1F("michel_frac","Fraction of Decay-e PEs that were detected",120,-0.1,1.1);
-
-
-
+  
   TH2D *highPE_XYstart = new TH2D("highPE_XYstart","High PE Particle Start",20,-40,40,20,-40,40);
   highPE_XYstart->SetXTitle("Location x(m)");
   highPE_XYstart->SetYTitle("Location y(m)");
 
-
   TH2D *highPE_XYstop = new TH2D("highPE_XYstop","High PE Particle Stop",20,-40,40,20,-40,40);
   highPE_XYstop->SetXTitle("Location x(m)");
   highPE_XYstop->SetYTitle("Location y(m)");
-
 
   TH1D *highPE_mom = new TH1D("highPE_mom","High PE Particle Initial Momentum",110,-0.1,10.9);
   highPE_mom->SetXTitle("Initial Momentum (GeV)");
@@ -128,19 +126,16 @@ void check_michelsMulti() {
   int total_with_subevent_michel = 0;
   //nevent = 3639;
 
-  int nOB = 0; //number out of bounds
+  int nOB = 0; // number out of bounds
+  double PEthresh = 500.0; // PMT saturation point
+  double PEcap = 1800.0; // filters a few strange occurrences of super high PEs
+  int nPEthresh = 0; // number hits above max PEthresh
+  int cnhits = 0; // counts cherenkov hits
 
   for(int ii = 0; ii < nevent; ii++){
 
     if(ii%50==0) 
       std::cout << "Event " << ii << std::endl;
-
-    if(ii%50 == 0 && ii != 0)
-      std::cout << "Percent OB: " << 100*(double)nOB/(double)ii << "%" << std::endl;
-
-    if(ii == (nevent-1))
-      std::cout << "Number of events excluded from 'High PE' plots analysis (out of bounds): " << nOB << std::endl;
-
   
     chain.GetEvent(ii); 
     
@@ -150,7 +145,7 @@ void check_michelsMulti() {
     if(0){
 
       std::cout << "Subevent: " << wcsimrootsuperevent->HasSubEvents()
-    	      << " N triggers: " << wcsimrootsuperevent->GetNumberOfEvents() << std::endl;
+		<< " N triggers: " << wcsimrootsuperevent->GetNumberOfEvents() << std::endl;
 
 
 
@@ -168,29 +163,33 @@ void check_michelsMulti() {
 
       WCSimRootTrack *track = (WCSimRootTrack*)wcsimrootevent->GetTracks()->At(i);
 
+      double OBz = 49.5; //in cm
+      double OBxy = 34.0;
+
       if(i == 2 && // source particle
-	 ( fabs(track->GetStart(2))/100 > 49.5 
-	   || fabs(track->GetStart(0))/100 > 34.0
-	   || fabs(track->GetStart(1))/100 > 34.0
-	   || fabs(track->GetStop(2))/100 > 49.5 
-	   || fabs(track->GetStop(0))/100 > 34.0
-	   || fabs(track->GetStop(1))/100 > 34.0)) 
+	 ( fabs(track->GetStart(2))/100 > OBz 
+	   || fabs(track->GetStart(0))/100 > OBxy
+	   || fabs(track->GetStart(1))/100 > OBxy
+	   || fabs(track->GetStop(2))/100 > OBz
+	   || fabs(track->GetStop(0))/100 > OBxy
+	   || fabs(track->GetStop(1))/100 > OBxy)) 
 	{
 	
-	OB = true;
-	std::cout << ii << ": OB event ommitted from analysis" << std::endl;
+	  OB = true;
+	  std::cout << ii << ": OB event ommitted from analysis" << std::endl;
 
 	}
 
-      
+
+    
       if(0)      std::cout << "particle type: " <<  track->GetIpnu()
-		<< " " << track->GetFlag()
-		<< " " << track->GetM()
-		<< " " << track->GetP()
-		<< " " << track->GetE()		
-		<< " " << track->GetParenttype() 	
-		<< " " << track->GetTime()		
-		<< " " << track->GetId() << std::endl;
+			   << " " << track->GetFlag()
+			   << " " << track->GetM()
+			   << " " << track->GetP()
+			   << " " << track->GetE()		
+			   << " " << track->GetParenttype() 	
+			   << " " << track->GetTime()		
+			   << " " << track->GetId() << std::endl;
 
       if (track->GetIpnu() == 11){
 	hasElectron = true;
@@ -201,8 +200,15 @@ void check_michelsMulti() {
 
     if(OB == true) {
       nOB++;
+
+      if(ii%50 == 0 && ii != 0)
+	std::cout << "Percent OB: " << 100*(double)nOB/(double)ii << "%" << std::endl;
+
+      if(ii == (nevent-1))
+	std::cout << "Number of events excluded analysis (out of bounds): " << nOB << std::endl;
+
       continue;
-    }    
+    }  
 
     if(hasElectron){
       total_with_ingate_michel++;
@@ -212,24 +218,24 @@ void check_michelsMulti() {
       
 
     /*
-    if(wcsimrootsuperevent->GetNumberOfEvents() > 1){
+      if(wcsimrootsuperevent->GetNumberOfEvents() > 1){
       for(int j = 1; j < wcsimrootsuperevent->GetNumberOfEvents(); j++){
-	WCSimRootTrigger *wcsimrootevent = wcsimrootsuperevent->GetTrigger(j);
-	if(0)std::cout << "Sub " << j << std::endl;
-	for(int i = 0; i < wcsimrootevent->GetNtrack(); i++){
-	  WCSimRootTrack *track = (WCSimRootTrack*)wcsimrootevent->GetTracks()->At(i);
+      WCSimRootTrigger *wcsimrootevent = wcsimrootsuperevent->GetTrigger(j);
+      if(0)std::cout << "Sub " << j << std::endl;
+      for(int i = 0; i < wcsimrootevent->GetNtrack(); i++){
+      WCSimRootTrack *track = (WCSimRootTrack*)wcsimrootevent->GetTracks()->At(i);
 
-	  if(0)	  std::cout << "particle type: " <<  track->GetIpnu()
-		    << " " << track->GetFlag()
-		    << " " << track->GetM()
-		    << " " << track->GetP()
-		    << " " << track->GetE()		
-		    << " " << track->GetParenttype() 	
-		    << " " << track->GetTime()		
-		    << " " << track->GetId() << std::endl;
-	}
+      if(0)	  std::cout << "particle type: " <<  track->GetIpnu()
+      << " " << track->GetFlag()
+      << " " << track->GetM()
+      << " " << track->GetP()
+      << " " << track->GetE()		
+      << " " << track->GetParenttype() 	
+      << " " << track->GetTime()		
+      << " " << track->GetId() << std::endl;
       }
-    }
+      }
+      }
     */
     
     //-----------------------
@@ -242,7 +248,7 @@ void check_michelsMulti() {
 
     double clargest = 0;
     for (int i = 0; i<max; i++){
-      //cout << i << std::endl;
+
       WCSimRootCherenkovHit *chit = (WCSimRootCherenkovHit*)wcsimrootevent->GetCherenkovHits()->At(i);
 
       ccharge->Fill(chit->GetTotalPe(1));
@@ -251,6 +257,7 @@ void check_michelsMulti() {
 
 
       continue;
+
       PMT_hits->Fill(chit->GetTubeID());
       //WCSimRootCherenkovHit has methods GetTubeId(), GetTotalPe(int)
       PE->Fill(chit->GetTotalPe(1));
@@ -300,46 +307,30 @@ void check_michelsMulti() {
 	//	return;
       }
     }
+
+
     cmaxcharge->Fill(clargest);
 
 
 
-
-
-
-
-
-
-
     // Point the track to the source particle. Normally would be At(0) but
-    // there's this odd muon that is produced everytime in that slot, so we want At(2)
+    // there's this odd mirror that is produced everytime in that slot, so we want At(2)
     track = (WCSimRootTrack*)wcsimrootevent->GetTracks()->At(2); 
 
-    if(clargest > 200) {
+    if(clargest > PEthresh) {
       
-      if (0) std::cout << "\nTop Track"
+      if (0) std::cout << "\n\nTop Track"
 		       << "\nipnu " << track->GetIpnu()
 		       << "\nID " << track->GetId()
 		       << "\np " << track->GetP()
 		       << "\nE " << track->GetE()
-		       << "\nstart " << track->GetStart(0)
-		       << "\nstop " << track->GetStop(0)
 		       << "\nparent " << track->GetParenttype() << std::endl;
 	
       highPE_XYstart->Fill(track->GetStart(0)/100,track->GetStart(1)/100);
       highPE_XYstop->Fill(track->GetStop(0)/100,track->GetStop(1)/100);
       highPE_mom->Fill(track->GetP()/1000);
 
-
     }
-
-
-
-
-
-
-
-
 
 
 
@@ -350,6 +341,7 @@ void check_michelsMulti() {
     int nMichelPhotons=0;
     int nPhotons=0;
 
+
     std::map<int, int > list_of_digits;    
     double totcharge = 0;
     max = wcsimrootevent->GetNcherenkovdigihits();
@@ -359,15 +351,24 @@ void check_michelsMulti() {
       //WCSimRootChernkovDigiHit has methods GetTubeId(), GetT(), GetQ()
       QvsT->Fill(cDigiHit->GetT(), cDigiHit->GetQ());
       charge->Fill(cDigiHit->GetQ());
+
       if(cDigiHit->GetQ() > largest)
         largest = cDigiHit->GetQ();
 
+      if(cDigiHit->GetQ() > PEthresh) {
+	//std::cout << ii << "\t" << cDigiHit->GetQ() << std::endl;
+	nPEthresh++;
+      }
+
+
       continue;
+
       if(list_of_digits[cDigiHit->GetTubeId()] !=0){
 	std::cout << "argh, already have hits for tube " << cDigiHit->GetTubeId()
 		  << " " << list_of_digits[cDigiHit->GetTubeId()] 
 		  << std::endl;
       }
+
 
       list_of_digits[cDigiHit->GetTubeId()] += 1;
 
@@ -427,7 +428,7 @@ void check_michelsMulti() {
 	     && cthit->GetTruetime() > 350){
 	    isElectronHit = true;
 	    michel_times->Fill(cthit->GetTruetime());
-	    	nMichels++;
+	    nMichels++;
 	    HasMichelPhotons = true;
 	    nMichelPhotons++;
 	  }
@@ -464,10 +465,16 @@ void check_michelsMulti() {
 
 
       }
+
     }
+
+    cnhits += wcsimrootevent->GetNcherenkovdigihits();
+
 
     maxcharge->Fill(largest);
 
+    if(largest > PEcap)
+      std::cout << ii << "\t" << largest << std::endl;
     
     michel_n->Fill(nMichelPhotons);
     photons_n->Fill(nPhotons);
@@ -495,7 +502,14 @@ void check_michelsMulti() {
       //cout << "Number of photoelectron hit times" << wcsimrootevent->GetCherenkovHitTimes()->GetEntries() << endl;
       std::cout <<"Tot charge: " << totcharge << std::endl;
     }
+
   }
+
+
+  std::cout << "Hits over " << int(PEthresh) << "PE: " << nPEthresh 
+	    << " of " << cnhits 
+	    << " ---> " << 100*nPEthresh/double(cnhits) << "%" << std::endl;
+
 
   
 
@@ -544,107 +558,107 @@ void check_michelsMulti() {
   highPE_mom->Draw();
 
 
-//   TCanvas *c2 = new TCanvas("c2","c2");
+  //   TCanvas *c2 = new TCanvas("c2","c2");
 
-//   cherenkov_hittime->Draw();
+  //   cherenkov_hittime->Draw();
 
 
-//   TCanvas *c3 = new TCanvas("c3","c3");
-//   cherenkov_hits_per_tube->Draw();
+  //   TCanvas *c3 = new TCanvas("c3","c3");
+  //   cherenkov_hits_per_tube->Draw();
 
-//   TCanvas *c3 = new TCanvas("c4","c4");
-//   htdiff->Draw();
-//   htdiff->SetTitle("Time Difference ");
-//   htdiff->SetXTitle("tdiff between digi time and first photon time (ns)");
-//   htdiff_arr[1]->Draw("SAME");
-//   htdiff_arr[1]->SetLineColor(2);
-//   htdiff_arr[3]->Draw("SAME");
-//   htdiff_arr[3]->SetLineColor(3);
-//   htdiff_arr[5]->Draw("SAME");
-//   htdiff_arr[5]->SetLineColor(4);
-//   htdiff_arr[10]->Draw("SAME");
-//   htdiff_arr[10]->SetLineColor(5);
-//   htdiff_arr[14]->Draw("SAME");
-//   htdiff_arr[14]->SetLineColor(6);
+  //   TCanvas *c3 = new TCanvas("c4","c4");
+  //   htdiff->Draw();
+  //   htdiff->SetTitle("Time Difference ");
+  //   htdiff->SetXTitle("tdiff between digi time and first photon time (ns)");
+  //   htdiff_arr[1]->Draw("SAME");
+  //   htdiff_arr[1]->SetLineColor(2);
+  //   htdiff_arr[3]->Draw("SAME");
+  //   htdiff_arr[3]->SetLineColor(3);
+  //   htdiff_arr[5]->Draw("SAME");
+  //   htdiff_arr[5]->SetLineColor(4);
+  //   htdiff_arr[10]->Draw("SAME");
+  //   htdiff_arr[10]->SetLineColor(5);
+  //   htdiff_arr[14]->Draw("SAME");
+  //   htdiff_arr[14]->SetLineColor(6);
 
-//   TLegend *legg = new TLegend(0.11,0.6,0.4,0.89);
-//   legg->AddEntry(htdiff_arr[1],"2PE hits");
-//   legg->AddEntry(htdiff_arr[3],"4PE hits");
-//   legg->AddEntry(htdiff_arr[5],"6PE hits");
-//   legg->AddEntry(htdiff_arr[10],"11PE hits");
-//   legg->AddEntry(htdiff_arr[14],"15PE hits");
+  //   TLegend *legg = new TLegend(0.11,0.6,0.4,0.89);
+  //   legg->AddEntry(htdiff_arr[1],"2PE hits");
+  //   legg->AddEntry(htdiff_arr[3],"4PE hits");
+  //   legg->AddEntry(htdiff_arr[5],"6PE hits");
+  //   legg->AddEntry(htdiff_arr[10],"11PE hits");
+  //   legg->AddEntry(htdiff_arr[14],"15PE hits");
   
-//   gPad->SetLogy();
-//   legg->Draw("SAME");
+  //   gPad->SetLogy();
+  //   legg->Draw("SAME");
 
-//   TCanvas *c4 = new TCanvas("c5","c5");
+  //   TCanvas *c4 = new TCanvas("c5","c5");
   
-//   TGraphErrors *gr = new TGraphErrors();
+  //   TGraphErrors *gr = new TGraphErrors();
   
-//   for(int i = 0; i < 40; i++){
+  //   for(int i = 0; i < 40; i++){
 
-//     if(htdiff_arr[i]->GetEntries() < 50) continue;
+  //     if(htdiff_arr[i]->GetEntries() < 50) continue;
     
-//     TF1 func("f1","gaus",864,890);
-//     htdiff_arr[i]->Fit("f1","R");
+  //     TF1 func("f1","gaus",864,890);
+  //     htdiff_arr[i]->Fit("f1","R");
     
-//     std::cout << i << " " <<  func.GetParameter(0) 
-// 	      << "  "<< func.GetParameter(1)
-// 	      << "  "<< func.GetParameter(2) << std::endl;
+  //     std::cout << i << " " <<  func.GetParameter(0) 
+  // 	      << "  "<< func.GetParameter(1)
+  // 	      << "  "<< func.GetParameter(2) << std::endl;
     
-//     gr->SetPoint(i,i,func.GetParameter(2));
-//     gr->SetPointError(i,0,func.GetParError(2));
+  //     gr->SetPoint(i,i,func.GetParameter(2));
+  //     gr->SetPointError(i,0,func.GetParError(2));
     
 
-//   }
+  //   }
 
-//   gr->Draw("AP*");
-//   gr->GetXaxis()->SetTitle("Hit Charge (pe)");
-//   gr->GetYaxis()->SetTitle("Timing Resolution (ns)");
-//   TF1 *inv = new TF1("inv","3.16/sqrt(x) + 0.33",0.5,40);
-//   inv->Draw("SAME");
+  //   gr->Draw("AP*");
+  //   gr->GetXaxis()->SetTitle("Hit Charge (pe)");
+  //   gr->GetYaxis()->SetTitle("Timing Resolution (ns)");
+  //   TF1 *inv = new TF1("inv","3.16/sqrt(x) + 0.33",0.5,40);
+  //   inv->Draw("SAME");
 
-//   TCanvas *c5 = new TCanvas("C5");  
-//   photons_n->Draw();
-//   photons_n->SetTitle("Number of True PE per event");
-//   photons_n->SetXTitle("Number of True PE");
+  //   TCanvas *c5 = new TCanvas("C5");  
+  //   photons_n->Draw();
+  //   photons_n->SetTitle("Number of True PE per event");
+  //   photons_n->SetXTitle("Number of True PE");
 
-//   michel_n->Draw("SAME");
-//   michel_n->SetLineColor(2);
+  //   michel_n->Draw("SAME");
+  //   michel_n->SetLineColor(2);
   
-//   TLegend *leg5 = new TLegend(0.3,0.55,0.6,0.85);
-//   leg5->AddEntry(photons_n,"All PEs");
-//   leg5->AddEntry(michel_n,"PEs from in-gate decay-e");
-//   leg5->Draw("SAME");
+  //   TLegend *leg5 = new TLegend(0.3,0.55,0.6,0.85);
+  //   leg5->AddEntry(photons_n,"All PEs");
+  //   leg5->AddEntry(michel_n,"PEs from in-gate decay-e");
+  //   leg5->Draw("SAME");
 
-// //  TCanvas *c6 = new TCanvas("C6");  
-// //  TF1 *f1 = new TF1("f1","[0]*exp(-x/2000)",400,1000);
-// //  michel_times->Fit("f1","R");
-// //  michel_times->Draw();
-// //  michel_times->SetTitle("Times of In-gate Delayed PE");
-// //  michel_times->SetXTitle("Delayed PE Time (ns)");
+  // //  TCanvas *c6 = new TCanvas("C6");  
+  // //  TF1 *f1 = new TF1("f1","[0]*exp(-x/2000)",400,1000);
+  // //  michel_times->Fit("f1","R");
+  // //  michel_times->Draw();
+  // //  michel_times->SetTitle("Times of In-gate Delayed PE");
+  // //  michel_times->SetXTitle("Delayed PE Time (ns)");
 
   
 
-//   //TCanvas *c7 = new TCanvas("C7");  
-//   //michel_frac->Draw();
-//   //michel_frac->SetXTitle("Fraction of PMTs where decay-e PE was detected");
+  //   //TCanvas *c7 = new TCanvas("C7");  
+  //   //michel_frac->Draw();
+  //   //michel_frac->SetXTitle("Fraction of PMTs where decay-e PE was detected");
 
 
-//   //TCanvas *c8 = new TCanvas("C8");  
-//   //michelTubes_n->Draw();
-//   //michelTubes_n->SetXTitle("#PMTs with decay-e PE");
-//   //michelDetected_n->Draw("SAME");
-//   //michelDetected_n->SetLineColor(2);
+  //   //TCanvas *c8 = new TCanvas("C8");  
+  //   //michelTubes_n->Draw();
+  //   //michelTubes_n->SetXTitle("#PMTs with decay-e PE");
+  //   //michelDetected_n->Draw("SAME");
+  //   //michelDetected_n->SetLineColor(2);
 
-//   TLegend *leg8 = new TLegend(0.6,0.55,0.89,0.85);
-//   //leg8->AddEntry(michelTubes_n,"All PMTs with decay-e PEs");
-//   leg8->AddEntry(michelDetected_n,"PMTs with accurate decay-e time");
-//   leg8->Draw("SAME");
+  //   TLegend *leg8 = new TLegend(0.6,0.55,0.89,0.85);
+  //   //leg8->AddEntry(michelTubes_n,"All PMTs with decay-e PEs");
+  //   leg8->AddEntry(michelDetected_n,"PMTs with accurate decay-e time");
+  //   leg8->Draw("SAME");
 
-//   std::cout<< "Events: " << total_with_subevent_michel
-// 	   << " " << total_with_ingate_michel
-// 	   << " " << nevent << std::endl;
+  //   std::cout<< "Events: " << total_with_subevent_michel
+  // 	   << " " << total_with_ingate_michel
+  // 	   << " " << nevent << std::endl;
 
 
   TCanvas *c9 = new TCanvas("C9","chg",1600,900);  
