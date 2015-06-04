@@ -62,28 +62,41 @@ void DRtreeAnalyzer() {
 
   TFile *file = new TFile("~/work/wcsim/WCSim/DynaRange_TreeBuildMulti_Out.root");
   TTree *tree = (TTree*)file->Get("DRtree");
-  tree->SetBranchAddress("event",&myevent.start);
 
-  for(int i = 0; i < 1; i++) {
-
-    tree->GetEntry(i);
-    std::cout << myevent.start[0] << std::endl
-  	      << myevent.maxchrg << std::endl
-  	      << "filename: " << myevent.filename << std::endl
-  	      << myevent.eventID << std::endl
-  	      << myevent.PEthresh << std::endl
-  	      << myevent.E << std::endl
-  	      << myevent.nHits << std::endl
-  	      << myevent.nHitsThresh << std::endl
-  	      << std::endl;
-
-
+  std::string filename;
+  char q[100];
+  tree->SetBranchAddress("filename",&q);
+  int N = tree->GetEntries();
+  for(int f = 0; f < N; f++) {
+    tree->GetEntry(f);
+    std::cout << q << std::endl;
   }
+
+
+
+
+
+  //tree->SetBranchAddress("event",&myevent.start);
+
+  // for(int i = 0; i < 1; i++) {
+
+  //   tree->GetEntry(i);
+  //   std::cout << myevent.start[0] << std::endl
+  // 	      << myevent.maxchrg << std::endl
+  // 	      << "filename: " << myevent.filename << std::endl
+  // 	      << myevent.eventID << std::endl
+  // 	      << myevent.PEthresh << std::endl
+  // 	      << myevent.E << std::endl
+  // 	      << myevent.nHits << std::endl
+  // 	      << myevent.nHitsThresh << std::endl
+  // 	      << std::endl;
+
+
+  // }
 
 
   //char c[10];
   //std::string s();
-  const char *s[];
   char d[100];
   tree->SetBranchAddress("testchar",d);
 
@@ -99,10 +112,7 @@ void DRtreeAnalyzer() {
   for(int p = 0; p < 10; p++) {
     tree->GetEntry(p);
 
-    const char *ccc[100] = mytest.testchar;
-    //if(ccc) std::cout << "have ccc " << static_cast<const void*>(ccc) << std::endl;
     std::string stringgg = (const char*)mytest.testchar;
-
 
     std::cout << mytest.i << " "
     	      << mytest.j << " "
