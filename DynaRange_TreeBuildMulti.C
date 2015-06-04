@@ -12,31 +12,6 @@
  *
  */
 
-
-
-typedef struct{
-  double start[3], stop[3];  // x,y,z location in meters
-  double E,maxchrg,meanchrg; // initial energy of beam particle, max PE hit, mean PE of hits
-  double PEthresh;
-  int eventID; // event number
-  unsigned int nHits, nHitsThresh;
-  //const char *filename[100];
-  //std::string filename();
-
-  void setstring(const char* c) {
-    filename = c;
-  };
-
-} DRevent;
-
-
-typedef struct{
-  int i;
-  int j;
-  const char testchar[100];
-} test;
-
-
 void DynaRange_TreeBuildMulti() {
 
 
@@ -51,41 +26,19 @@ void DynaRange_TreeBuildMulti() {
   }
   gStyle->SetOptStat(1);
 
-
-  test mytest = {1, 2, "gee\0"};
-  // test mytest;
-  // mytest.testchar = "testing";
-  // mytest.i = 1;
-  // mytest.j = 2;
-
-  std::string str = (const char*)mytest.testchar;
-  std::cout << str << std::endl;
-
-  // Couldn't manage to send the 'filename' string in a non-initialization
-  // method for the DRevent struct. So struct init is near end
-  //char filename[100];
-  //std::string filename;
-  char filename[100];
-  double start[3], stop[3];
-  double E,maxchrg,meanchrg;
-  double PEthresh = 500.;
-  int eventID;
-  unsigned int nHits = 0;
-  unsigned int nHitsThresh = 0;
-
-  DRevent event;
-
-  int iFirst = 2;
-  int iLast = 4;
-
   TFile *f, *fout;
   fout = new TFile("~/work/wcsim/WCSim/DynaRange_TreeBuildMulti_Out.root","RECREATE");
 
-
-  //  const char c[100] = str.c_str();
-  char c[100] = "frig";
-
   TTree *DRtree = new TTree("DRtree","DRtree Title");
+
+  char filename[100];
+  double start[3], stop[3]; // Location coordinates of source particle
+  double E,maxchrg,meanchrg; // Initial energy of source, max PE captured, mean PE accross PMTs
+  double PEthresh = 500.; // Threshold value
+  int eventID;
+  unsigned int nHits; // Number of PMT hits
+  unsigned int nHitsThresh; // Number above threshold
+
   DRtree->Branch("filename",&filename,"filename/C");
   DRtree->Branch("start",&start,"start[3]/D");
   DRtree->Branch("stop",&stop,"stop[3]/D");
@@ -97,12 +50,9 @@ void DynaRange_TreeBuildMulti() {
   DRtree->Branch("nHits",&nHits,"nHits/i");
   DRtree->Branch("nHitsThresh",&nHitsThresh,"nHitsThresh/i");
 
-
-  //DRtree->Branch("event",&event.start,"start[3]/D:stop[3]:E:maxchrg:meanchrg:PEthresh:eventID/I:nHits/i:nHitsThresh:filename/C");
-  DRtree->Branch("teststruct",&mytest.i,"i/I:j:testchar/C");
-  DRtree->Branch("testchar",&c,"c/C");
-
   // Loop through files, building DRtree
+  int iFirst = 2;
+  int iLast = 4;
   for(int iFile = iFirst; iFile < (iLast+1); iFile++) {
 
     sprintf(filename,"/data14b/mwalters/wcsim_eIso%i.root",iFile);
@@ -123,13 +73,12 @@ void DynaRange_TreeBuildMulti() {
     wcsimT->GetBranch("wcsimrootevent")->SetAutoDelete(kTRUE);
 
 
-    //LOOP
     int nevent = wcsimT->GetEntries();
     //nevent = 400;
-
     for(int ii = 0; ii < nevent; ii++) {
 
       eventID = ii;  
+
       if(ii%50==0)
       	std::cout << "Event " << ii << std::endl;
 
@@ -144,24 +93,24 @@ void DynaRange_TreeBuildMulti() {
       double cmean = 0.;
       double clargest = 0.;
 
-      for(int iC = 0; iC < maxhits; iC++) {
+      for(int i = 0; i < maxhits; i++) {
 
-	WCSimRootCherenkovHit *chit = (WCSimRootCherenkovHit*)wcsimrootevent->GetCherenkovHits()->At(iC);
+	WCSimRootCherenkovHit *chit = (WCSimRootCherenkovHit*)wcsimrootevent->GetCherenkovHits()->At(i);
+	double charge = chit->GetTotalPe(1);
+	cmean += charge;
 
-	cmean += chit->GetTotalPe(1);
-
-	if(chit->GetTotalPe(1) > PEthresh)
+	if(charge > PEthresh)
 	  nHitsThresh++;
 
-	if(chit->GetTotalPe(1) > clargest)
-	  clargest = chit->GetTotalPe(1);
+	if(charge > clargest)
+	  clargest = charge;
 
       }
 
       if(maxhits)
-      	cmean /= maxhits;
+      	cmean /= (double)maxhits;
       else
-      	std::cout << ii << "\tNo Cherenkov hits, probably outside detector" << std::endl;
+      	std::cout << "Event " << ii << ":\tNo Cherenkov hits, probably outside detector" << std::endl;
 
       meanchrg = cmean;
       maxchrg = clargest;
@@ -178,7 +127,6 @@ void DynaRange_TreeBuildMulti() {
 
       E = track->GetE()/1000;
 
-      //DRevent event = {start,stop,E,maxchrg,meanchrg,PEthresh,eventID,nHits,nHitsThresh,filename};
       DRtree->Fill();
 
     }
